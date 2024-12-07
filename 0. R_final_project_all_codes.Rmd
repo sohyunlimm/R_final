@@ -1,0 +1,842 @@
+---
+title: "Final Project"
+author: "Sohyun Lim"
+date: "12-07-2024"
+output: pdf_document
+---
+
+# 1. Load the data and fix the column names
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(rvest)
+library(stats)
+library(rvest)
+library(sentimentr)
+library(tidytext)
+library(sf)
+library(stringr)
+library(shiny)
+library(dplyr)
+library(shinyWidgets)
+
+# Set the directory
+setwd("/Users/sohyunlim/Desktop/R - final")
+
+# Load the dataset
+data <- read.csv("Public_Health_Statistics_-_Selected_public_health_indicators_by_Chicago_community_area_-_Historical_20241031.csv")
+
+# Change column names
+colnames(data) <- colnames(data) %>%
+    tolower() %>%
+    str_replace_all(fixed("."), "_") %>% 
+    str_replace_all("__", "_") %>%
+    str_replace("_$", "")   
+
+# Select necessary columns
+data <- data %>% select(community_area, community_area_name, 
+                        cancer_all_sites, diabetes_related,
+                        below_poverty_level, unemployment, per_capita_income)
+```
+
+
+# 2. Create a bar graph with top 10 community area by main variables
+
+# 2-1. Public Health Indicator 
+# a, cancer_all_sites : Mortality per 100,000 persons
+# b. diabetes_related : Mortality per 100,000 persons
+# 2-2. Socioeconomic Indicator
+# a. below_poverty_level : Percent of households
+# b. unemployment : Percent of persons in labor force aged 16 years and older
+# c. per_capita_income : 2011 inflation-adjusted dollars
+
+```{r}
+# Create a table for cancer_all_sites
+cancer_areas <- data %>%
+  select(community_area, community_area_name, cancer_all_sites) %>%
+  arrange(desc(cancer_all_sites))
+top_10_cancer_areas <- head(cancer_areas, 10)
+
+diabetes_areas <- data %>%
+  select(community_area, community_area_name, diabetes_related) %>%
+  arrange(desc(diabetes_related))
+top_10_diabetes_areas <- head(diabetes_areas, 10)
+
+poverty_areas <- data %>%
+  select(community_area, community_area_name, below_poverty_level) %>%
+  arrange(desc(below_poverty_level))
+top_10_poverty_areas <- head(poverty_areas, 10)
+
+umemployment_areas <- data %>%
+  select(community_area, community_area_name, unemployment) %>%
+  arrange(desc(unemployment))
+top_10_umemployment_areas <- head(umemployment_areas, 10)
+
+income_areas <- data %>%
+  select(community_area, community_area_name, per_capita_income) %>%
+  arrange(per_capita_income)
+top_10_income_areas <- head(income_areas, 10)
+
+
+# Create a bar chart
+# 2-1_top_10_cancer.png
+bar_cancer <- ggplot(top_10_cancer_areas, aes(x = reorder(community_area_name, cancer_all_sites), y = cancer_all_sites)) +
+  geom_bar(stat = "identity", fill = "#377EB8") +
+  coord_flip() +
+  labs(
+    title = "Top 10 Community Areas with Highest Cancer Mortality",
+    x = "Community Area",
+    y = "Cancer (Mortality per 100,000 persons)"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
+    axis.title.x = element_text(size = 12, face = "bold"),
+    axis.title.y = element_text(size = 12, face = "bold"),
+    axis.text.x = element_text(size = 10, face = "bold"),
+    axis.text.y = element_text(size = 10, face = "bold")
+  )
+
+bar_cancer
+
+bar_cancer_path <- "/Users/sohyunlim/Desktop/R - final/pictures/2-1_top_10_cancer.png"
+ggsave(bar_cancer_path, plot = bar_cancer, width = 8, height = 6, dpi = 300)
+
+# 2-2_top_10_diabetes.png
+bar_diabetes <- ggplot(top_10_diabetes_areas, aes(x = reorder(community_area_name, diabetes_related), y = diabetes_related)) +
+  geom_bar(stat = "identity", fill = "#377EB8") +
+  coord_flip() +
+  labs(
+    title = "Top 10 Community Areas with Highest Diabetes Mortality",
+    x = "Community Area",
+    y = "Diabetes (Mortality per 100,000 persons)"
+  ) +
+  theme_minimal() + 
+  theme(
+    plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
+    axis.title.x = element_text(size = 12, face = "bold"),
+    axis.title.y = element_text(size = 12, face = "bold"),
+    axis.text.x = element_text(size = 10, face = "bold"),
+    axis.text.y = element_text(size = 10, face = "bold")
+  ) + 
+  scale_y_continuous(
+    limits = c(0, 130),  
+    breaks = seq(0, 125, by = 25)  
+  )
+
+bar_diabetes
+
+bar_diabetes_path <- "/Users/sohyunlim/Desktop/R - final/pictures/2-2_top_10_diabetes.png"
+ggsave(bar_diabetes_path, plot = bar_diabetes, width = 11, height = 6, dpi = 300)
+
+# 2-3_top_10_poverty.png
+bar_poverty <- ggplot(top_10_poverty_areas, aes(x = reorder(community_area_name, below_poverty_level), y = below_poverty_level)) +
+  geom_bar(stat = "identity", fill = "#377EB8") +
+  coord_flip() +
+  labs(
+    title = "Top 10 Community Areas with Highest Poverty Level",
+    x = "Community Area",
+    y = "Poverty (%)"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
+    axis.title.x = element_text(size = 12, face = "bold"),
+    axis.title.y = element_text(size = 12, face = "bold"),
+    axis.text.x = element_text(size = 10, face = "bold"),
+    axis.text.y = element_text(size = 10, face = "bold")
+  )
+
+bar_poverty
+
+bar_poverty_path <- "/Users/sohyunlim/Desktop/R - final/pictures/2-3_top_10_poverty.png"
+ggsave(bar_poverty_path, plot = bar_poverty, width = 8, height = 6, dpi = 300)
+
+# 2-4_top_10_unemployment.png
+bar_unemployment <- ggplot(top_10_umemployment_areas, aes(x = reorder(community_area_name, unemployment), y = unemployment)) +
+  geom_bar(stat = "identity", fill = "#377EB8") +
+  coord_flip() +
+  labs(
+    title = "Top 10 Community Areas with Highest Unemployment",
+    x = "Community Area",
+    y = "Unemployment (%)"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
+    axis.title.x = element_text(size = 12, face = "bold"),
+    axis.title.y = element_text(size = 12, face = "bold"),
+    axis.text.x = element_text(size = 10, face = "bold"),
+    axis.text.y = element_text(size = 10, face = "bold")
+  )
+
+bar_unemployment
+
+bar_unemployment_path <- "/Users/sohyunlim/Desktop/R - final/pictures/2-4_top_10_unemployment.png"
+ggsave(bar_unemployment_path, plot = bar_unemployment, width = 8, height = 6, dpi = 300)
+
+# 2-5_top_10_income.png
+bar_income <- ggplot(top_10_income_areas, aes(x = reorder(community_area_name, -per_capita_income), y = per_capita_income)) +
+  geom_bar(stat = "identity", fill = "#377EB8") +
+  coord_flip() +
+  labs(
+    title = "Top 10 Community Areas with Lowest Income",
+    x = "Community Area",
+    y = "Income ($)"
+  ) +
+  theme_minimal() + 
+  theme(
+    plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
+    axis.title.x = element_text(size = 12, face = "bold"),
+    axis.title.y = element_text(size = 12, face = "bold"),
+    axis.text.x = element_text(size = 10, face = "bold"),
+    axis.text.y = element_text(size = 10, face = "bold")
+  )
+
+bar_income
+
+bar_income_path <- "/Users/sohyunlim/Desktop/R - final/pictures/2-5_top_10_income.png"
+ggsave(bar_income_path, plot = bar_income, width = 8, height = 6, dpi = 300)
+```
+
+# 3. Regression Model
+# 3-1. Run a linear regression to study correlationship between socioeconomic factors and public health.
+
+```{r}
+# 3-1. below_poverty_level ~ cancer_all_sites
+model_1 <- lm(cancer_all_sites ~ below_poverty_level, data = data)
+summary(model_1)
+
+# 3-2. unemployment ~ cancer_all_sites
+model_2 <- lm(cancer_all_sites ~ unemployment, data = data)
+summary(model_2)
+
+# 3-3. per_capita_income ~ cancer_all_sites
+model_3 <- lm(cancer_all_sites ~ per_capita_income, data = data)
+summary(model_3)
+
+# 3-4. below_poverty_level ~ diabetes_related
+model_4 <- lm(diabetes_related ~ below_poverty_level, data = data)
+summary(model_4)
+
+# 3-5. unemployment ~ diabetes_related
+model_5 <- lm(diabetes_related ~ unemployment, data = data)
+summary(model_5)
+
+# 3-6. per_capita_income ~ diabetes_related
+model_6 <- lm(diabetes_related ~ per_capita_income, data = data)
+summary(model_6)
+```
+
+# 3-2. Create scatter plots.
+```{r}
+# 3-1. below_poverty_level ~ cancer_all_sites
+scatter_poverty_cancer <- ggplot(data, aes(x = below_poverty_level, y = cancer_all_sites)) +
+  geom_point(color = "blue", size = 2) +  
+  geom_smooth(method = "lm", color = "red", se = FALSE) +  
+  labs(
+    title = "Poverty Level and Cancer",
+    x = "Below Poverty Level (%)",
+    y = "Cancer (Mortality per 100,000 persons)"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5)  
+  )
+
+scatter_poverty_cancer
+
+scatter_poverty_cancer_path <- "/Users/sohyunlim/Desktop/R - final/pictures/3-1_scatter_poverty_cancer.png"
+ggsave(scatter_poverty_cancer_path, plot = scatter_poverty_cancer, width = 8, height = 6, dpi = 300)
+
+# 3-2. unemployment ~ cancer_all_sites
+scatter_unemployment_cancer <- ggplot(data, aes(x = unemployment, y = cancer_all_sites)) +
+  geom_point(color = "blue", size = 2) +  
+  geom_smooth(method = "lm", color = "red", se = FALSE) +  
+  labs(
+    title = "Unemployment and Cancer",
+    x = "Unemployment (%)",
+    y = "Cancer (Mortality per 100,000 persons)"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5)  
+  )
+
+scatter_unemployment_cancer
+
+scatter_unemployment_cancer_path <- "/Users/sohyunlim/Desktop/R - final/pictures/3-2_scatter_unemplyoment_cancer.png"
+ggsave(scatter_unemployment_cancer_path, plot = scatter_unemployment_cancer, width = 8, height = 6, dpi = 300)
+
+# 3-3. per_capita_income ~ cancer_all_sites
+scatter_income_cancer <- ggplot(data, aes(x = per_capita_income, y = cancer_all_sites)) +
+  geom_point(color = "blue", size = 2) +  
+  geom_smooth(method = "lm", color = "red", se = FALSE) +  
+  labs(
+    title = "Income and Cancer",
+    x = "Income ($)",
+    y = "Cancer (Mortality per 100,000 persons)"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5)  
+  )
+
+scatter_income_cancer
+
+scatter_income_cancer_path <- "/Users/sohyunlim/Desktop/R - final/pictures/3-3_scatter_income_cancer.png"
+ggsave(scatter_income_cancer_path, plot = scatter_income_cancer, width = 8, height = 6, dpi = 300)
+
+# 3-4. below_poverty_level ~ diabetes_related
+scatter_poverty_diabetes <- ggplot(data, aes(x = below_poverty_level, y = diabetes_related)) +
+  geom_point(color = "blue", size = 2) +  
+  geom_smooth(method = "lm", color = "red", se = FALSE) +  
+  labs(
+    title = "Poverty Level and Diabetes",
+    x = "Below Poverty Level (%)",
+    y = "Diabetes (Mortality per 100,000 persons)"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5)  
+  )
+
+scatter_poverty_diabetes
+
+scatter_poverty_diabetes_path <- "/Users/sohyunlim/Desktop/R - final/pictures/3-4_scatter_poverty_diabetes.png"
+ggsave(scatter_poverty_diabetes_path, plot = scatter_poverty_diabetes, width = 8, height = 6, dpi = 300)
+
+# 3-5. unemployment ~ diabetes_related
+scatter_unemployment_diabetes <- ggplot(data, aes(x = unemployment, y = diabetes_related)) +
+  geom_point(color = "blue", size = 2) +  
+  geom_smooth(method = "lm", color = "red", se = FALSE) +  
+  labs(
+    title = "Uemployment and Diabetes",
+    x = "Uemployment (%)",
+    y = "Diabetes (Mortality per 100,000 persons)"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5)  
+  )
+
+scatter_unemployment_diabetes
+
+scatter_unemployment_diabetes_path <- "/Users/sohyunlim/Desktop/R - final/pictures/3-5_scatter_unemployment_diabetes.png"
+ggsave(scatter_unemployment_diabetes_path, plot = scatter_unemployment_diabetes, width = 8, height = 6, dpi = 300)
+
+# 3-6. per_capita_income ~ diabetes_related
+scatter_income_diabetes <- ggplot(data, aes(x = per_capita_income, y = diabetes_related)) +
+  geom_point(color = "blue", size = 2) +  
+  geom_smooth(method = "lm", color = "red", se = FALSE) +  
+  labs(
+    title = "Income and Diabetes",
+    x = "Income ($)",
+    y = "Diabetes (Mortality per 100,000 persons)"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5)  
+  )
+
+scatter_income_diabetes
+
+scatter_income_diabetes_path <- "/Users/sohyunlim/Desktop/R - final/pictures/3-6_scatter_income_diabetes.png"
+ggsave(scatter_income_diabetes_path, plot = scatter_income_diabetes, width = 8, height = 6, dpi = 300)
+```
+
+
+# 4. Text Analysis
+```{r}
+# URL
+url <- "https://www.cbsnews.com/chicago/news/cancer-care-disparities-1/"
+
+# Load the web page and parse
+page <- read_html(url)
+
+# Extract the article content
+article_section <- page %>%
+  html_nodes(".content__body") %>%  
+  html_text() %>%                   
+  str_replace_all("\\s+", " ") %>%  
+  str_squish()                      
+
+# Save as txt. format.
+file_path <- "/Users/sohyunlim/Desktop/R - final/text analysis/article_content.txt"  
+cat(article_section, file = file_path, sep = "\n")
+```
+
+# 4-1. Sentimental analysis - article
+```{r}
+text_data <- article_section
+
+# Analyze overall sentiment of the article
+overall_sentiment <- sentiment(text_data)
+
+# Calculate Polarity :  -0.04598272 (slightly negative)
+polarity <- mean(overall_sentiment$sentiment)
+
+# Calculate Subjectivity : 0.9540173 (relatively subject) 0~1
+subjectivity <- 1 - abs(polarity)
+
+# Print the Outcome
+cat("Overall Polarity (Positive/Negative):", polarity, "\n")
+cat("Overall Subjectivity (Objective/Subjective):", subjectivity, "\n")
+```
+
+# 4-2. Sentimental analysis - sentence
+```{r}
+text_data <- article_section
+
+# Divide the article by sentence
+sentences <- get_sentences(text_data)
+
+# Run the sentimental analysis
+sentiment_results <- sentiment(sentences)
+
+# Check the outcome dataframe
+head(sentiment_results)
+
+# Arrange the data for visualization
+plot_data <- sentiment_results %>%
+  group_by(sentence_id) %>%
+  summarise(sentiment = mean(sentiment))
+
+# Add number to the sentence
+plot_data$sentence_number <- seq_along(plot_data$sentence_id)
+
+# Create a graph
+sentence <- ggplot(plot_data, aes(x = sentence_number, y = sentiment)) +
+  geom_line(color = "blue", size = 1) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +  
+  labs(
+    title = "Sentence Polarity of Article",
+    x = "Sentence Number",
+    y = "Polarity"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
+    axis.title.x = element_text(size = 12, face = "bold"),
+    axis.title.y = element_text(size = 12, face = "bold"),
+    axis.text.x = element_text(size = 12, face = "bold"),
+    axis.text.y = element_text(size = 12, face = "bold")
+  )
+
+sentence
+
+sentence_path <- "/Users/sohyunlim/Desktop/R - final/text analysis/4-1_sentence_polarity_plot.png"
+ggsave(filename = sentence_path, plot = sentence, width = 10, height = 6, dpi = 300)
+```
+
+# 4-3. Word frequency analysis - word
+```{r}
+# Convert text data into the dataframe format
+text_df <- data.frame(text = article_section, stringsAsFactors = FALSE)
+
+# Tokenize the text and remove stop words
+custom_stopwords <- data.frame(word = c("said", "jones", "riggins", "thomas", "sinclair"), 
+                               lexicon = "custom")
+word_freq <- text_df %>%
+  unnest_tokens(word, text) %>%
+  anti_join(stop_words, by = "word") %>%
+  anti_join(custom_stopwords, by = "word") %>%
+  count(word, sort = TRUE)
+
+# Check top 10 words
+top_words <- head(word_freq, 10)
+print(top_words)
+
+# Create a bar graph with words frequency
+word_frq <- ggplot(top_words, aes(x = reorder(word, n), y = n)) +
+  geom_col(fill = "steelblue") +
+  coord_flip() +
+  labs(
+    title = "Top 10 Most Frequent Words",
+    x = "Word",
+    y = "Frequency"
+  ) +
+  theme_minimal() + 
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
+    axis.title.x = element_text(size = 12, face = "bold"),
+    axis.title.y = element_text(size = 12, face = "bold"),
+    axis.text.x = element_text(size = 12, face = "bold"),
+    axis.text.y = element_text(size = 12, face = "bold")         
+  )
+
+word_frq
+
+word_frq_path <- "/Users/sohyunlim/Desktop/R - final/text analysis/4-2_word_frequency.png"
+ggsave(filename = word_frq_path, plot = word_frq, width = 10, height = 6, dpi = 300)
+```
+
+
+# 5. Geospatial analysis
+# Load a shp file.
+```{r}
+# Read csv file
+healthcare_data <- read.csv("/Users/sohyunlim/Desktop/R - final/Map_-_Public_Health_Services_-_Chicago_Primary_Care_Community_Health_Centers.csv")
+
+# Fix the column names
+colnames(healthcare_data) <- colnames(healthcare_data) %>%
+    tolower() %>%
+    str_replace_all(fixed("."), "_") %>% 
+    str_replace_all("__", "_") %>%
+    str_replace("_$", "")   
+
+head(healthcare_data)
+
+# Extract latitude and longitude from Address
+extract_lat_lon <- function(address) {
+  match <- str_match(address, "\\(([-+]?[0-9]*\\.?[0-9]+), ([-+]?[0-9]*\\.?[0-9]+)\\)")
+  if (!is.na(match[1, 1])) {
+    return(c(as.numeric(match[1, 2]), as.numeric(match[1, 3])))
+  } else {
+    return(c(NA, NA))
+  }
+}
+
+# Add latitude and longitude columns
+lat_lon <- t(apply(as.data.frame(healthcare_data$address), 1, extract_lat_lon))
+healthcare_data$latitude <- lat_lon[, 1]
+healthcare_data$longitude <- lat_lon[, 2]
+
+head(healthcare_data[, c("facility", "latitude", "longitude")])
+
+# Drop NA 
+healthcare_data <- healthcare_data %>% filter(!is.na(latitude) & !is.na(longitude))
+
+# Convert into sf 
+points_sf <- st_as_sf(
+  healthcare_data,
+  coords = c("longitude", "latitude"),
+  crs = 4326  
+)
+```
+
+```{r}
+# Rad Shapefile 
+chi_shp <- st_read("/Users/sohyunlim/Desktop/R - final/Comm_20Areas__1_/CommAreas.shp")
+print(chi_shp)
+```
+# 5-1. Chicago Health Center Map
+```{r}
+# Check CRS
+chi_shp <- st_transform(chi_shp, crs = 4326)
+points_sf <- st_transform(points_sf, crs = 4326)
+
+# Set the range of longitude and latitude of Chicago
+chi_longitude_range <- c(-88, -87.5)  
+chi_latitude_range <- c(41.6, 42)    
+
+# Create a map
+chicago_health_center <- ggplot() +
+  geom_sf(data = chi_shp, fill = "lightgrey", color = "gray", alpha = 0.3) +  
+  geom_sf(data = points_sf, color = "red", size = 2, shape = 21) +  
+  labs(
+    title = "Chicago Map with Healthcare Centers"
+  ) +
+  coord_sf(
+    xlim = chi_longitude_range,  
+    ylim = chi_latitude_range,  
+    expand = FALSE
+  ) +
+  theme_void() +  
+  theme(
+    plot.title = element_text(
+      hjust = 0.5,                
+      size = 14,                  
+      margin = margin(t = 10, b = 20)  
+    )
+  )
+
+chicago_health_center
+
+chicago_health_center_path <- "/Users/sohyunlim/Desktop/R - final/geospatial analysis/5-0_chicago_health_center.png"
+ggsave(filename = chicago_health_center_path, plot = chicago_health_center, width = 10, height = 6, dpi = 300)
+```
+
+# Merge chicago shp and health dataset
+```{r}
+# Chicago shape file : chi_shp
+# Chicago health dataset : data
+
+# Fix the column names
+colnames(chi_shp) <- colnames(chi_shp) %>%
+    tolower() %>%
+    str_replace_all(fixed("."), "_") %>% 
+    str_replace_all("__", "_") %>%
+    str_replace("_$", "")  
+
+# Change column name in the shp file.
+chi_shp <- chi_shp %>%
+  rename(community_area = area_num_1)  
+
+chi_shp$community_area <- as.numeric(chi_shp$community_area)
+data$community_area <- as.numeric(data$community_area)
+
+# Merge data
+merged_data <- chi_shp %>%
+  left_join(data, by = "community_area")
+```
+
+# 5-2. Chicago map with public health indicators
+```{r}
+# 1. cancer_all_sites
+map_cancer <- ggplot(data = merged_data) +
+  geom_sf(aes(fill = cancer_all_sites), color = "gray", size = 0.2) +
+  scale_fill_gradient(
+    low = "lightblue",
+    high = "darkblue",
+    name = "Cancer (Mortality per 100,000 persons)"
+  ) +
+  labs(
+    title = "Cancer MOrtality in Chicago Community Areas"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
+    axis.text = element_blank(),  
+    axis.ticks = element_blank()
+  )
+
+map_cancer
+
+map_cancer_path <- "/Users/sohyunlim/Desktop/R - final/geospatial analysis/5-1_chicago_cancer.png"
+ggsave(filename = map_cancer_path, plot = map_cancer, width = 10, height = 6, dpi = 300)
+
+# 2. diabetes_related
+map_diabetes <- ggplot(data = merged_data) +
+  geom_sf(aes(fill = diabetes_related), color = "gray", size = 0.2) +
+  scale_fill_gradient(
+    low = "lightblue",
+    high = "darkblue",
+    name = "Diabetes (Mortality per 100,000 persons)"
+  ) +
+  labs(
+    title = "Diabetes Mortality in Chicago Community Areas"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
+    axis.text = element_blank(),  
+    axis.ticks = element_blank()
+  )
+
+map_diabetes
+
+map_diabetes_path <- "/Users/sohyunlim/Desktop/R - final/geospatial analysis/5-2_chicago_diabetes.png"
+ggsave(filename = map_diabetes_path, plot = map_diabetes, width = 10, height = 6, dpi = 300)
+```
+
+# 5-3. Chicago map with socioeconomic indicators
+```{r}
+# 3. below_poverty_level
+map_poverty <- ggplot(data = merged_data) +
+  geom_sf(aes(fill = below_poverty_level), color = "gray", size = 0.2) +
+  scale_fill_gradient(
+    low = "#FFF5B7",
+    high = "red",
+    name = "Poverty Level (%)"
+  ) +
+  labs(
+    title = "Below Poverty Level by Chicago Community Areas"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
+    axis.text = element_blank(),  
+    axis.ticks = element_blank()
+  )
+
+map_poverty
+
+map_poverty_path <- "/Users/sohyunlim/Desktop/R - final/geospatial analysis/5-3_chicago_poverty.png"
+ggsave(filename = map_poverty_path, plot = map_poverty, width = 10, height = 6, dpi = 300)
+
+# 4. unemployment
+map_unemployment <- ggplot(data = merged_data) +
+  geom_sf(aes(fill = unemployment), color = "gray", size = 0.2) +
+  scale_fill_gradient(
+    low = "#FFF5B7",
+    high = "red",
+    name = "Unemployment (%)"
+  ) +
+  labs(
+    title = "Unemployment by Chicago Community Areas"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
+    axis.text = element_blank(),  
+    axis.ticks = element_blank()
+  )
+
+map_unemployment
+
+map_unemployment_path <- "/Users/sohyunlim/Desktop/R - final/geospatial analysis/5-4_chicago_unemployment.png"
+ggsave(filename = map_unemployment_path, plot = map_unemployment, width = 10, height = 6, dpi = 300)
+
+# 5. per_capita_income
+map_income <- ggplot(data = merged_data) +
+  geom_sf(aes(fill = per_capita_income), color = "gray", size = 0.2) +
+  scale_fill_gradient(
+    low = "#FFF5B7",
+    high = "#FF8040",
+    name = "Income($)"
+  ) +
+  labs(
+    title = "Income by Chicago Community Areas"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
+    axis.text = element_blank(),  
+    axis.ticks = element_blank()
+  )
+
+map_income
+
+map_income_path <- "/Users/sohyunlim/Desktop/R - final/geospatial analysis/5-5_chicago_income.png"
+ggsave(filename = map_income_path, plot = map_income, width = 10, height = 6, dpi = 300)
+```
+
+
+# 6. Shiny App
+
+```{r}
+# Convert CRS (EPSG:4326)
+chi_shp <- st_transform(chi_shp, crs = 4326)
+points_sf <- st_transform(points_sf, crs = 4326)
+merged_data <- st_transform(merged_data, crs = 4326)
+
+# Set the boundary of the map
+chi_longitude_range <- c(-88, -87.5)
+chi_latitude_range <- c(41.6, 42)
+
+ui <- fluidPage(
+    titlePanel("Chicago Public Health Indicators and Healthcare Centers"),
+    sidebarLayout(
+        sidebarPanel(
+            selectInput(
+                inputId = "variable",
+                label = "Select Indicators to Display:",
+                choices = c("Cancer Mortality" = "cancer_all_sites",
+                            "Diabetes Mortality" = "diabetes_related",
+                            "Below Poverty Level" = "below_poverty_level",
+                            "Unemployment" = "unemployment",
+                            "Per Capita Income" = "per_capita_income")
+            ),
+            switchInput(
+                inputId = "show_healthcare",
+                label = "Overlay Healthcare Centers",
+                value = FALSE
+            )
+        ),
+        mainPanel(
+            plotOutput("map")
+        )
+    )
+)
+
+server <- function(input, output) {
+    output$map <- renderPlot({
+        selected_var <- input$variable
+        show_healthcare <- input$show_healthcare
+
+        base_map <- ggplot(data = merged_data) +
+            geom_sf(aes_string(fill = selected_var), color = "gray", size = 0.2) +
+            scale_fill_gradient(
+                low = "lightblue",
+                high = "darkblue",
+                name = selected_var
+            ) +
+            labs(
+                title = paste("Chicago Community Areas -", gsub("_", " ", selected_var))
+            ) +
+            coord_sf(
+                xlim = chi_longitude_range,
+                ylim = chi_latitude_range,
+                expand = FALSE
+            ) +
+            theme_minimal() +
+            theme(
+                plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
+                axis.text = element_blank(),
+                axis.ticks = element_blank()
+            )
+
+        if (show_healthcare) {
+    base_map <- base_map +
+        geom_sf(data = points_sf, color = "red", size = 5, shape = 10) +
+        coord_sf(
+            xlim = chi_longitude_range,
+            ylim = chi_latitude_range,
+            expand = FALSE
+        )
+}
+
+        base_map
+    })
+}
+
+shinyApp(ui = ui, server = server)
+```
+
+# Additional. Create a map showing health outcome and socioeconomic status in Chicago
+```{r}
+# Top 10 regions overlapped regarding cancer and diabetes mortality
+overlap_cancer_diabetes <- intersect(top_10_cancer_areas$community_area, top_10_diabetes_areas$community_area)
+
+# Filter the data of those regions
+overlap_data <- chi_shp %>% 
+  filter(community_area %in% overlap_cancer_diabetes)
+
+# Create a map
+map_cancer_diabetes_overlap <- ggplot() +
+  geom_sf(data = chi_shp, fill = "lightgrey", color = "gray", alpha = 0.3) + 
+  geom_sf(data = overlap_data, fill = "red", color = "black", size = 0.2) +
+  labs(
+    title = "Top 10 Cancer & Diabetes Areas in Chicago"
+  ) +
+  theme_void() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 16, face = "bold", margin = margin(t = 10, b = 20))
+  )
+
+map_cancer_diabetes_overlap
+
+map_cancer_diabetes_overlap_path <- "/Users/sohyunlim/Desktop/R - final/pictures/2-6_top_10_overlap_health.png"
+ggsave(map_cancer_diabetes_overlap_path, plot = map_cancer_diabetes_overlap, width = 8, height = 6, dpi = 300)
+
+
+# Top 10 regions overlapped regarding highest poverty, unemplyoemtn, and low income
+overlap_socioeconomic <- Reduce(intersect, list(
+  top_10_poverty_areas$community_area,
+  top_10_umemployment_areas$community_area,
+  top_10_income_areas$community_area
+))
+
+# Filter the data of those regions
+overlap_socioeconomic_data <- chi_shp %>% 
+  filter(community_area %in% overlap_socioeconomic)
+
+# Create a map
+map_socioeconomic_overlap <- ggplot() +
+  geom_sf(data = chi_shp, fill = "lightgrey", color = "gray", alpha = 0.3) + 
+  geom_sf(data = overlap_socioeconomic_data, fill = "blue", color = "black", size = 0.2) +
+  labs(
+    title = "Top 10 Socioeconomic Indicators in Chicago"
+  ) +
+  theme_void() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 16, face = "bold", margin = margin(t = 10, b = 20))
+  )
+
+map_socioeconomic_overlap
+
+map_socioeconomic_overlap_path <- "/Users/sohyunlim/Desktop/R - final/pictures/2-7_top_10_overlap_socio.png"
+ggsave(map_socioeconomic_overlap_path, plot = map_socioeconomic_overlap, width = 8, height = 6, dpi = 300)
+
+```
