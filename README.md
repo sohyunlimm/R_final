@@ -43,6 +43,9 @@ This code is for the final research project to explore the relationship between 
 5) model.R
 : This file includes codes for 6 linear regression models and scatter plots created based on each models. Three socioeconomic indicators including poverty, unemployment, and income were used for independent variables for each model, and two health outcomes such as cancer and diabetes were used for dependent variables for each model.
 
+*** 0. R_final_project_all_codes.Rmd
+: This is a Rmd file that contains all the codes used for the project. The R files explained above are separated from this Rmd file.
+
 
 5. Images
 1) 2-1 ~ 2-5 : These images show the list of top 10 areas of each with socioeconomic challenges and serious healthcare outcomes. From the graph, we can see that communities in the south and west sides of Chicago experience higher poverty and unemployment rates, lower income levels, and poorer health outcomes.
@@ -55,3 +58,6 @@ This code is for the final research project to explore the relationship between 
 6. Write-up
 1) writeup.md : This file describes (1) motivation and research question, (2) data sources, (3) analysis that I applied for the research such as text analysis, descriptive statistics, and spatial analysis, (4) Shiny app, and (5) conclusion with key findings, policy implication and limitation of this reserach.
 2) writeup.pdf : I created a pdf file in case the images are not shown in the writeup.md file.
+
+*** images_writeup
+: This folder is created to collect images used for writeup. It is not related to the images folder where all the images created from codes are automatically saved.
